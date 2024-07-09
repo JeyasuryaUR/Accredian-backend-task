@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
-async function sendEmail(to, subject, referrerName, referrerEmail, refereeName, refereeEmail, referralDate) {
+async function sendEmail(to, subject, referrerName, referrerEmail, message, refereeName, refereeEmail, referralDate) {
     let transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -24,8 +24,8 @@ async function sendEmail(to, subject, referrerName, referrerEmail, refereeName, 
     });
 
     let emailHtml = `
-        <h1>Referral Submission Successful</h1>
-        <p>Thank you for submitting your referral.</p>
+        <h1>You've Received a Referral</h1>
+        <p>${message}</p>
         <p><strong>Referrer Details:</strong></p>
         <p>Name: ${referrerName}</p>
         <p>Email: ${referrerEmail}</p>
@@ -77,7 +77,7 @@ app.post('/referrals', referralValidationRules, async (req, res) => {
             }
         });
 
-        await sendEmail(refereeEmail, "Referral Submission Successful", referrerName, referrerEmail, refereeName, refereeEmail, new Date().toISOString());
+        await sendEmail(refereeEmail, "Referral Submission Successful", referrerName, referrerEmail, message, refereeName, refereeEmail, new Date().toISOString());
 
         res.json(newReferral);
     } catch (error) {
