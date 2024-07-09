@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
-async function sendEmail(to, subject, text) {
+async function sendEmail(to, subject, referrerName, referrerEmail, refereeName, refereeEmail, referralDate) {
     let transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -21,11 +21,23 @@ async function sendEmail(to, subject, text) {
         },
     });
 
+    let emailHtml = `
+        <h1>Referral Submission Successful</h1>
+        <p>Thank you for submitting your referral.</p>
+        <p><strong>Referrer Details:</strong></p>
+        <p>Name: ${referrerName}</p>
+        <p>Email: ${referrerEmail}</p>
+        <p><strong>Referee Details:</strong></p>
+        <p>Name: ${refereeName}</p>
+        <p>Email: ${refereeEmail}</p>
+        <p>Referral Date: ${referralDate}</p>
+    `;
+
     let mailOptions = {
         from: process.env.EMAIL_ADDRESS,
         to: to,
         subject: subject,
-        text: text,
+        html: emailHtml,
     };
 
     transporter.sendMail(mailOptions, function(error, info){
@@ -38,8 +50,10 @@ async function sendEmail(to, subject, text) {
 }
 
 const referralValidationRules = [
-    check('name').not().isEmpty().withMessage('Name is required'),
-    check('email').isEmail().withMessage('Email is invalid'),
+    check('referrerName').not().isEmpty().withMessage('Referrer name is required'),
+    check('referrerEmail').isEmail().withMessage('Referrer email is invalid'),
+    check('refereeName').not().isEmpty().withMessage('Referee name is required'),
+    check('refereeEmail').isEmail().withMessage('Referee email is invalid'),
 ];
 
 app.post('/referrals', referralValidationRules, async (req, res) => { 
@@ -48,13 +62,12 @@ app.post('/referrals', referralValidationRules, async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, email, referredBy } = req.body;
+    const { referrerName, referrerEmail, message, refereeName, refereeEmail } = req.body;
 
     try {
-        // Check if a referral with the given email already exists
         const existingReferral = await prisma.referral.findUnique({
             where: {
-                email: email,
+                refereeEmail: refereeEmail,
             },
         });
 
@@ -64,13 +77,15 @@ app.post('/referrals', referralValidationRules, async (req, res) => {
 
         const newReferral = await prisma.referral.create({
             data: {
-                name,
-                email,
-                referredBy: referredBy || null, 
+                referrerName,
+                referrerEmail,
+                message: message || null,
+                refereeName,
+                refereeEmail,
             },
         });
 
-        await sendEmail(email, "Referral Submission Successful", "Thank you for submitting your referral.");
+        await sendEmail(refereeEmail, "Referral Submission Successful", referrerName, referrerEmail, refereeName, refereeEmail, new Date().toISOString());
 
         res.json(newReferral);
     } catch (error) {
@@ -82,4 +97,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
