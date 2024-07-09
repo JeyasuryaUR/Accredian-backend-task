@@ -2,10 +2,12 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const nodemailer = require('nodemailer');
 const { check, validationResult } = require('express-validator');
+const cors = require('cors'); // Require CORS
+
 
 const app = express();
 const prisma = new PrismaClient();
-
+app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -65,16 +67,6 @@ app.post('/referrals', referralValidationRules, async (req, res) => {
     const { referrerName, referrerEmail, message, refereeName, refereeEmail } = req.body;
 
     try {
-        const existingReferral = await prisma.referral.findUnique({
-            where: {
-                refereeEmail: refereeEmail,
-            },
-        });
-
-        if (existingReferral) {
-            return res.status(400).json({ error: "A referral with this email already exists." });
-        }
-
         const newReferral = await prisma.referral.create({
             data: {
                 referrerName,
