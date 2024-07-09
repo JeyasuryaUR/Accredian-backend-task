@@ -73,8 +73,8 @@ app.post('/referrals', referralValidationRules, async (req, res) => {
                 referrerEmail,
                 message: message || null,
                 refereeName,
-                refereeEmail,
-            },
+                refereeEmail
+            }
         });
 
         await sendEmail(refereeEmail, "Referral Submission Successful", referrerName, referrerEmail, refereeName, refereeEmail, new Date().toISOString());
